@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Site de Suivi Quotidien</title>
+    <style>
+        /* Base styles */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        /* Header styles */
+        header {
+            text-align: center;
+            font-size: 32px;
+            font-weight: bold;
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            padding: 25px;
+            width: 100%;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Main content */
+        main {
+            margin-top: 30px;
+            text-align: center;
+            width: 90%;
+            max-width: 600px;
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Button styles */
+        .button {
+            background-color: #1abc9c;
+            color: white;
+            padding: 15px;
+            border: none;
+            border-radius: 50px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            max-width: 400px;
+            transition: background-color 0.3s ease;
+            margin: 10px 0;
+        }
+
+        .button:hover {
+            background-color: #16a085;
+        }
+
+        /* Dropdown and text area styles */
+        select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #bdc3c7;
+            border-radius: 10px;
+            font-size: 16px;
+            margin-top: 20px;
+            appearance: none;
+            background-color: #ffffff;
+        }
+
+        select:focus, textarea:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        /* Task form styles */
+        .task-form {
+            display: none;
+            margin-top: 20px;
+        }
+
+        /* Footer styles */
+        footer {
+            text-align: center;
+            font-size: 18px;
+            background-color: #2c3e50;
+            color: white;
+            padding: 20px;
+            width: 100%;
+            margin-top: 40px;
+        }
+
+        /* Mobile responsiveness */
+        @media (max-width: 600px) {
+            header {
+                font-size: 24px;
+                padding: 20px;
+            }
+
+            main {
+                margin-top: 20px;
+                width: 95%;
+                padding: 15px;
+            }
+
+            .button {
+                font-size: 16px;
+                padding: 12px;
+            }
+
+            select, textarea {
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Suivi Quotidien des Tâches</h1>
+    </header>
+
+    <main>
+        <button id="startTracking" class="button">Lancer les tâches d'aujourd'hui</button>
+
+        <div id="daySelection" class="day-selection">
+            <label for="dayDropdown">Sélectionnez un jour:</label>
+            <select id="dayDropdown"></select>
+        </div>
+
+        <div id="taskForm" class="task-form">
+            <h2>Ajouter des tâches pour le <span id="selectedDay"></span></h2>
+            <div id="tasksContainer"></div>
+            <button id="addTask" class="button">Ajouter une tâche</button>
+            <button id="sendData" class="button">Envoyer</button>
+        </div>
+    </main>
+
+    <footer>
+        Suivi Quotidien des Tâches
+    </footer>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
+        import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCOA0a_rjXqY99KXyyuHEiPOJDGGapZQUo",
+            authDomain: "suivi-49954.firebaseapp.com",
+            databaseURL: "https://suivi-49954-default-rtdb.firebaseio.com",
+            projectId: "suivi-49954",
+            storageBucket: "suivi-49954.appspot.com",
+            messagingSenderId: "141836603566",
+            appId: "1:141836603566:web:aaff934468238d958cdd3f",
+            measurementId: "G-3CMYEPPYK8"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        const days = [...Array(31).keys()].map(i => `septembre ${i + 1}`).concat([...Array(30).keys()].map(i => `octobre ${i + 1}`));
+
+        document.getElementById("startTracking").addEventListener("click", function() {
+            document.getElementById("daySelection").style.display = "block";
+            const dayDropdown = document.getElementById("dayDropdown");
+            dayDropdown.innerHTML = `<option value="" disabled selected>Choisir un jour...</option>`;
+            days.forEach(day => {
+                const option = document.createElement("option");
+                option.value = day;
+                option.textContent = day;
+                dayDropdown.appendChild(option);
+            });
+        });
+
+        document.getElementById("dayDropdown").addEventListener("change", function() {
+            const selectedDay = this.value;
+            document.getElementById("selectedDay").textContent = selectedDay;
+            document.getElementById("taskForm").style.display = "block";
+        });
+
+        document.getElementById("addTask").addEventListener("click", function() {
+            const tasksContainer = document.getElementById("tasksContainer");
+            const taskElement = document.createElement("textarea");
+            taskElement.placeholder = "Décrivez une tâche...";
+            tasksContainer.appendChild(taskElement);
+        });
+
+        document.getElementById("sendData").addEventListener("click", function() {
+            const selectedDay = document.getElementById("selectedDay").textContent;
+            const tasksContainer = document.getElementById("tasksContainer");
+            const tasks = Array.from(tasksContainer.querySelectorAll('textarea')).map(task => task.value);
+
+            set(ref(db, 'days/' + selectedDay), { tasks })
+                .then(() => alert("Données envoyées avec succès!"))
+                .catch(error => alert("Erreur lors de l'envoi: " + error.message));
+        });
+    </script>
+
+</body>
+</html>
